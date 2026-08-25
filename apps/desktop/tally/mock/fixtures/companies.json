@@ -1,0 +1,15 @@
+{
+  "state": "connected",
+  "message": "Connected. A company is open in Tally.",
+  "httpStatus": 200,
+  "baseUrl": "http://mock.tally",
+  "cmpInfo": {
+    "company": 2,
+    "ledger": 40,
+    "group": 12,
+    "stockItem": 5,
+    "stockGroup": 3,
+    "voucher": 8
+  },
+  "companies": ["Lucky Collection", "Demo Co"]
+}

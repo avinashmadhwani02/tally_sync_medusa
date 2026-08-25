@@ -1,0 +1,18 @@
+{
+  "name": "tally-sync-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo: Tally Sync Electron desktop app + Node.js sync service (Postgres)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "desktop": "npm run start -w @tally-sync/desktop",
+    "desktop:mock": "npm run start:mock -w @tally-sync/desktop",
+    "medusa": "npm run dev -w @tally-sync/medusa",
+    "medusa:migrate": "npm run db:migrate -w @tally-sync/medusa",
+    "medusa:user": "npm run user -w @tally-sync/medusa --",
+    "medusa:redis": "docker compose -f apps/medusa/docker-compose.yml up -d",
+    "create-key": "npm run create-key -w @tally-sync/medusa --"
+  }
+}

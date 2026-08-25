@@ -1,0 +1,61 @@
+{
+  "Lucky Collection": {
+    "cmpInfo": {
+      "company": 1,
+      "ledger": 40,
+      "group": 12,
+      "stockItem": 3,
+      "stockGroup": 2,
+      "voucher": 8
+    },
+    "items": [
+      {
+        "name": "Cotton Shirt",
+        "partNumber": "SHIRT-COT-001",
+        "parent": "Finished Goods",
+        "unit": "Nos",
+        "closingQty": "29 Nos"
+      },
+      {
+        "name": "Denim Jeans",
+        "partNumber": "JEANS-DNM-010",
+        "parent": "Finished Goods",
+        "unit": "Nos",
+        "closingQty": "12 Nos"
+      },
+      {
+        "name": "Cotton Fabric",
+        "partNumber": "FABRIC-COT-150",
+        "parent": "Raw Material",
+        "unit": "Mtr",
+        "closingQty": "150 Mtr"
+      }
+    ]
+  },
+  "Demo Co": {
+    "cmpInfo": {
+      "company": 1,
+      "ledger": 10,
+      "group": 4,
+      "stockItem": 2,
+      "stockGroup": 1,
+      "voucher": 0
+    },
+    "items": [
+      {
+        "name": "Sample Item",
+        "partNumber": "SAMPLE-001",
+        "parent": "Primary",
+        "unit": "Nos",
+        "closingQty": "1 Nos"
+      },
+      {
+        "name": "Spare Part",
+        "partNumber": "SPARE-005",
+        "parent": "Primary",
+        "unit": "Nos",
+        "closingQty": "5 Nos"
+      }
+    ]
+  }
+}

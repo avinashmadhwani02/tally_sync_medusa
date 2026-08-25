@@ -1,0 +1,189 @@
+{
+  "group": " Primary",
+  "total": 12,
+  "inStockCount": 9,
+  "items": [
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-TILES-2X4",
+      "tallyName": "Tiles 2x4",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": null,
+      "model": "Tiles 2x4",
+      "color": null,
+      "colorCode": null,
+      "mrpPaise": null,
+      "sizeInfo": null,
+      "quantity": 1000,
+      "unit": "BOX",
+      "warnings": [
+        "no pattern matched — used raw name",
+        "unit \"BOX\" is not PRS/PCS — review before syncing",
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WGR53200-BOYS-BLU-MRP30900",
+      "tallyName": "WGR53200 BOYS PAIR BLU [MRP-309.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "kids",
+      "model": "WGR53200",
+      "color": "BLU",
+      "colorCode": "BLU",
+      "mrpPaise": 30900,
+      "sizeInfo": null,
+      "quantity": 30,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WGR53200-BOYS-OLV-MRP30900",
+      "tallyName": "WGR53200 BOYS PAIR OLV [MRP-309.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "kids",
+      "model": "WGR53200",
+      "color": "OLV",
+      "colorCode": "OLV",
+      "mrpPaise": 30900,
+      "sizeInfo": null,
+      "quantity": 30,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WGR53200-GENTS-OLV-MRP32400",
+      "tallyName": "WGR53200 GENTS PAIR OLV [MRP-324.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "men",
+      "model": "WGR53200",
+      "color": "OLV",
+      "colorCode": "OLV",
+      "mrpPaise": 32400,
+      "sizeInfo": null,
+      "quantity": 54,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WGR53248-BOYS-OLV-MRP26900",
+      "tallyName": "WGR53248 BOYS PAIR OLV [MRP-269.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "kids",
+      "model": "WGR53248",
+      "color": "OLV",
+      "colorCode": "OLV",
+      "mrpPaise": 26900,
+      "sizeInfo": null,
+      "quantity": 14,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WL7174-LADIES-BLK-MRP37900",
+      "tallyName": "WL7174 LADIES PAIR BLK [MRP-379.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "women",
+      "model": "WL7174",
+      "color": "BLK",
+      "colorCode": "BLK",
+      "mrpPaise": 37900,
+      "sizeInfo": null,
+      "quantity": 90,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WLB74023-LADIES-SPLM-MRP25950",
+      "tallyName": "WLB74023 LADIES PAIR SPLM [MRP-259.50]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "women",
+      "model": "WLB74023",
+      "color": "SPLM",
+      "colorCode": "SPLM",
+      "mrpPaise": 25950,
+      "sizeInfo": null,
+      "quantity": 60,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WLR72026-LADIES-GRG-MRP29900",
+      "tallyName": "WLR72026 LADIES PAIR GRG [MRP-299.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "women",
+      "model": "WLR72026",
+      "color": "GRG",
+      "colorCode": "GRG",
+      "mrpPaise": 29900,
+      "sizeInfo": null,
+      "quantity": 30,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF-PRIMARY-MIXED-WLR77035-LADIES-DROS-MRP31900",
+      "tallyName": "WLR77035 LADIES PAIR DROS [MRP-319.00]",
+      "group": " Primary",
+      "groupKey": "primary-mixed",
+      "brand": "Primary Mixed",
+      "syncAllowed": false,
+      "gender": "women",
+      "model": "WLR77035",
+      "color": "DROS",
+      "colorCode": "DROS",
+      "mrpPaise": 31900,
+      "sizeInfo": null,
+      "quantity": 30,
+      "unit": "PRS",
+      "warnings": [
+        "group \" Primary\" has sync disabled in groupConfigs.js"
+      ]
+    }
+  ]
+}

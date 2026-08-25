@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @default(now()) @updatedAt @map("updated_at")
+  stockItems StockItem[]
+  syncRuns   SyncRun[]
+
+  @@map("companies")
+}
+
+model StockItem {
+  id         Int      @id @default(autoincrement())
+  companyId  Int      @map("company_id")
+  name       String
+  sku        String?  @unique // from Tally Part Number if set, otherwise generated once and never changed
+  parent     String?
+  unit       String?
+  closingQty String?  @map("closing_qty")
+  syncedAt   DateTime @default(now()) @map("synced_at")
+  lastRunId  Int?     @map("last_run_id") // id of the SyncRun that last changed this item
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([lastRunId])
+  @@map("stock_items")
+}
+
+model ApiKey {
+  id        Int       @id @default(autoincrement())
+  label     String
+  keyHash   String    @unique @map("key_hash")
+  prefix    String // first chars of the raw key, for identification in listings
+  active    Boolean   @default(true)
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  syncRuns  SyncRun[]
+
+  @@map("api_keys")
+}
+
+enum SyncTrigger {
+  manual
+  auto
+}
+
+model SyncRun {
+  id           Int         @id @default(autoincrement())
+  companyId    Int         @map("company_id")
+  apiKeyId     Int?        @map("api_key_id")
+  trigger      SyncTrigger @default(manual)
+  status       String      @default("success") // success | partial | failed
+  itemCount    Int         @default(0) @map("item_count")
+  inserted     Int         @default(0)
+  updated      Int         @default(0)
+  failedCount  Int         @default(0) @map("failed_count")
+  report       Json?
+  errorMessage String?     @map("error_message")
+  tallyHost    String?     @map("tally_host")
+  syncedAt     DateTime    @default(now()) @map("synced_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  apiKey  ApiKey? @relation(fields: [apiKeyId], references: [id])
+
+  @@index([companyId])
+  @@index([syncedAt])
+  @@map("sync_runs")
+}
+

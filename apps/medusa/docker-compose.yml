@@ -1,0 +1,11 @@
+# Redis only. Postgres is the existing tally_sync database used by sync-service.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - medusa_redis:/data
+
+volumes:
+  medusa_redis:

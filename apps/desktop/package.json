@@ -1,0 +1,17 @@
+{
+  "name": "@tally-sync/desktop",
+  "version": "1.0.0",
+  "description": "Electron desktop app: fetch companies and stock from Tally Cloud over HTTP XML",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:mock": "TALLY_SOURCE=mock electron ."
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "fast-xml-parser": "^5.11.0"
+  },
+  "devDependencies": {
+    "electron": "^43.4.1"
+  }
+}

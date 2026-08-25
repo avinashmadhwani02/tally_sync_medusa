@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>Tally Sync</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Tally Sync</h1>
+      <p>Pull stock from your Tally company straight into the sync database.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Connect to Tally</h2>
+      <div class="row">
+        <label>IP address <input id="ip" type="text" value="103.171.134.98" /></label>
+        <label>Port <input id="port" type="text" value="17942" /></label>
+      </div>
+      <button id="btnTest" type="button" class="primary">Test connection</button>
+      <div id="banner" class="banner idle">Not connected yet</div>
+    </section>
+
+    <section class="card" id="needOpen" hidden>
+      <h2>Open a company in Tally</h2>
+      <p>
+        Connection works, but Tally does not have a company open. Stock cannot be
+        read until you open one.
+      </p>
+      <ol>
+        <li>Open Tally on the cloud desktop.</li>
+        <li>Select the company (same names as in Tally: e.g. Lucky Collection).</li>
+        <li>Leave that company open, then click <strong>Test connection</strong> again.</li>
+      </ol>
+    </section>
+
+    <section class="card" id="companyCard" hidden>
+      <h2>2. Company</h2>
+      <p class="hint">
+        These are your Tally company books — the same list you see when you select a
+        company in Tally.
+      </p>
+      <label>Company
+        <select id="company"></select>
+      </label>
+    </section>
+
+    <section class="card" id="stockCard" hidden>
+      <h2>3. Stock</h2>
+      <button id="btnStock" type="button" class="primary">Sync stock</button>
+      <p id="stockStatus" class="hint"></p>
+
+      <div id="progressCard" class="progress-card" hidden>
+        <div class="progress-header">
+          <span id="progressLabel">Preparing…</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <ol class="steps">
+          <li id="step-fetch" data-step="fetch">Fetch from Tally</li>
+          <li id="step-push" data-step="push">Push to database</li>
+        </ol>
+      </div>
+
+      <pre id="preview" hidden></pre>
+    </section>
+
+    <section class="card" id="historyCard">
+      <div class="history-header">
+        <h2>Sync history</h2>
+        <button id="btnRefreshHistory" type="button" class="secondary">Refresh</button>
+      </div>
+      <p id="historyMsg" class="hint"></p>
+      <div id="historyTableWrap" hidden>
+        <table class="sync-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Company</th>
+              <th>Trigger</th>
+              <th>Status</th>
+              <th>Items</th>
+              <th>OK / Failed</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

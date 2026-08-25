@@ -1,0 +1,71 @@
+{
+  "group": "A",
+  "total": 44,
+  "inStockCount": 3,
+  "items": [
+    {
+      "ok": false,
+      "sku": "RRF",
+      "tallyName": "GOODS RETURN CAMPUS",
+      "group": "A",
+      "groupKey": "default",
+      "brand": null,
+      "syncAllowed": false,
+      "gender": null,
+      "model": "GOODS RETURN CAMPUS",
+      "color": null,
+      "colorCode": null,
+      "mrpPaise": null,
+      "sizeInfo": null,
+      "quantity": 181,
+      "unit": "BOX",
+      "warnings": [
+        "no pattern matched — used raw name",
+        "unit \"BOX\" is not PRS/PCS — review before syncing",
+        "group \"A\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF",
+      "tallyName": "PS5 ASTRO",
+      "group": "A",
+      "groupKey": "default",
+      "brand": null,
+      "syncAllowed": false,
+      "gender": null,
+      "model": "PS5 ASTRO",
+      "color": null,
+      "colorCode": null,
+      "mrpPaise": null,
+      "sizeInfo": null,
+      "quantity": 5,
+      "unit": "PC",
+      "warnings": [
+        "no pattern matched — used raw name",
+        "group \"A\" has sync disabled in groupConfigs.js"
+      ]
+    },
+    {
+      "ok": false,
+      "sku": "RRF",
+      "tallyName": "SHORT BILLING BY ASIAN",
+      "group": "A",
+      "groupKey": "default",
+      "brand": null,
+      "syncAllowed": false,
+      "gender": null,
+      "model": "SHORT BILLING BY ASIAN",
+      "color": null,
+      "colorCode": null,
+      "mrpPaise": null,
+      "sizeInfo": null,
+      "quantity": 58,
+      "unit": "PAIRS",
+      "warnings": [
+        "no pattern matched — used raw name",
+        "group \"A\" has sync disabled in groupConfigs.js"
+      ]
+    }
+  ]
+}
