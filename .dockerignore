@@ -1,0 +1,19 @@
+.git
+.github
+**/.DS_Store
+**/.env
+**/.env.*
+**/*.log
+
+**/node_modules
+**/.medusa
+**/dist
+apps/medusa/uploads
+apps/medusa/src/generated
+data
+
+# Desktop / sync are only needed as workspace package.json for npm ci
+apps/desktop/**
+!apps/desktop/package.json
+apps/sync/**
+!apps/sync/package.json
