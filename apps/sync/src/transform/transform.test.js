@@ -94,3 +94,73 @@ test("sums quantity when the same variant appears twice", () => {
   assert.equal(plans[0].variants.length, 1)
   assert.equal(plans[0].variants[0].quantity, 5)
 })
+
+test("mark out-of-scope brands as skipped, not silently synced", () => {
+  const { plans, skipped } = transformItems([
+    { name: "WALKAROO-WLR72017-LADIES-PAIR-BRN-MRP-269-00", parent: "Walkaroo", closingQty: "2 PCS" },
+    { name: "NIKE SOMETHING", parent: "Nike", closingQty: "9 PCS" },
+  ])
+  assert.equal(plans.length, 1)
+  assert.equal(plans[0].productId, "WALKAROO-WLR72017")
+  assert.equal(skipped.outOfScope, 1)
+  assert.equal(skipped.parseFailed, 0)
+})
+
+test("brand filter drops other (enabled) brands as notEnabled", () => {
+  const { plans, skipped } = transformItems(
+    [
+      { name: "WALKAROO-WLR72017-LADIES-PAIR-BRN-MRP-269-00", parent: "Walkaroo", closingQty: "2 PCS" },
+      {
+        name: "S2641A-02-C2",
+        parent: "Campus Shoes",
+        article: "22C-166A-TECH CH_C",
+        closingQty: "4",
+      },
+    ],
+    { brand: "walkaroo" }
+  )
+  assert.equal(plans.length, 1)
+  assert.equal(plans[0].brand, "walkaroo")
+  assert.equal(skipped.notEnabled, 1)
+})
+
+test("zero-stock items produce a flagged plan and are excluded from selectedCount", () => {
+  const { plans, selectedCount, skipped } = transformItems([
+    { name: "WALKAROO-WLR72017-LADIES-PAIR-BRN-MRP-269-00", parent: "Walkaroo", closingQty: "0 PCS" },
+    { name: "WALKAROO-WLR72017-LADIES-PAIR-CRM-MRP-269-00", parent: "Walkaroo", closingQty: "4 PCS" },
+  ])
+  assert.equal(plans.length, 1)
+  assert.equal(plans[0].zeroStock, false) // aggregated row still has stock from CRM
+  assert.equal(selectedCount, 1)
+  assert.equal(skipped.noStock, 0)
+})
+
+test("a product with no stock across its variants is flagged and not selected", () => {
+  const { plans, selectedCount, skipped } = transformItems([
+    { name: "WALKAROO-WLR72017-LADIES-PAIR-BRN-MRP-269-00", parent: "Walkaroo", closingQty: "0 PCS" },
+  ])
+  assert.equal(plans.length, 1)
+  assert.equal(plans[0].zeroStock, true)
+  assert.equal(plans[0].quantity, 0)
+  assert.equal(selectedCount, 0)
+  assert.equal(skipped.noStock, 1)
+})
+
+test("limit caps the number of plans returned", () => {
+  const items = [1, 2, 3].map((n) => ({
+    name: `WALKAROO-WLR720${n}-LADIES-PAIR-BRN-MRP-269-00`,
+    parent: "Walkaroo",
+    closingQty: "2 PCS",
+  }))
+  const { plans } = transformItems(items, { limit: 2 })
+  assert.equal(plans.length, 2)
+})
+
+test("currency is echoed onto generated variant prices", () => {
+  const { plans } = transformItems(
+    [{ name: "WALKAROO-WLR72017-LADIES-PAIR-BRN-MRP-269-00", parent: "Walkaroo", closingQty: "2 PCS" }],
+    { currency: "usd" }
+  )
+  assert.equal(plans[0].product.variants[0].prices[0].currency_code, "usd")
+})
+

@@ -13,6 +13,8 @@
     "medusa:migrate": "npm run db:migrate -w @tally-sync/medusa",
     "medusa:user": "npm run user -w @tally-sync/medusa --",
     "medusa:redis": "docker compose -f apps/medusa/docker-compose.yml up -d",
-    "create-key": "npm run create-key -w @tally-sync/medusa --"
+    "create-key": "npm run create-key -w @tally-sync/medusa --",
+    "test": "npm run test -w @tally-sync/sync",
+    "test:sync": "npm run test -w @tally-sync/sync"
   }
 }

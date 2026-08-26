@@ -522,4 +522,5 @@ module.exports = {
   parseNestedBatches,
   resolveBatchQuantities,
   expandWithBatches,
+  parseCompanies,
 }

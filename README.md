@@ -43,3 +43,23 @@ Same paths as the old Express service. Header: `x-api-key`.
 - `GET  /export/changes?since=`
 
 Prisma schema: `apps/medusa/prisma`. Explore: `npm run studio -w @tally-sync/medusa`.
+
+## Testing
+
+The sync app (`apps/sync`) has a unit test suite built on Node's built-in
+[`node:test`](https://nodejs.org/api/test.html) runner (no extra framework).
+
+```bash
+npm test                        # runs every *.test.js in apps/sync
+npm run test:sync               # alias
+npm run test -w @tally-sync/sync
+```
+
+Coverage spans the brand parsers (`Walkaroo` / `Campus` / `ADDA`), quantity/rate
+helpers, the Tally XML fetch adapters (stock rows, batch allocations, companies,
+stock summary), the transform pipeline (aggregation, brand filter, zero-stock,
+limit), the stage validator, run helpers (`computeDiff` / `mapState`), the logger,
+prompt fallbacks, and small utilities (`slug`, `normalize`, JSON helpers, env).
+
+CI runs these on every push/PR via `.github/workflows/ci.yml` (GitHub Actions,
+Node 22).

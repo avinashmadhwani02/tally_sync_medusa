@@ -279,7 +279,6 @@ module.exports = {
   runFetch,
   runPush,
   STEPS,
-  runPipeline,
-  runFetch,
-  runPush,
+  computeDiff,
+  mapState,
 }

@@ -8,7 +8,7 @@
     "fetch": "node bin/sync.js --step fetch",
     "push": "node bin/sync.js --step push",
     "push:commit": "node bin/sync.js --step push --commit",
-    "test": "node --test src/brands/walkaroo.test.js src/brands/campus.test.js src/transform/transform.test.js"
+    "test": "node --test 'src/**/*.test.js'"
   },
   "dependencies": {
     "pino": "^9.9.0",
