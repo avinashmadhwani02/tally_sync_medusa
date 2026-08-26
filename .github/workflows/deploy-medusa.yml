@@ -12,7 +12,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  ECR_REPOSITORY: tally-sync-medusa
+  ECR_REPOSITORY: medusa-backend
 
 jobs:
   build-and-push:
