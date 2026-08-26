@@ -4,4 +4,10 @@ function parseQty(closingQty) {
   return Number.isFinite(n) ? n : 0
 }
 
-module.exports = { parseQty }
+function parseRate(v) {
+  const m = String(v ?? "").match(/(\d+(?:\.\d+)?)/)
+  const n = m ? parseFloat(m[1]) : NaN
+  return Number.isFinite(n) ? n : null
+}
+
+module.exports = { parseQty, parseRate }

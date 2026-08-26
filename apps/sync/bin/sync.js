@@ -11,13 +11,16 @@
  * MEDUSA_ADMIN_EMAIL, MEDUSA_ADMIN_PASSWORD). Flags override env.
  *
  * Push defaults to a DRY-RUN (plan only). Pass --commit to write to Medusa.
+ * Console shows a single updating status line. Full logs: apps/sync/data/runs/...
+ * Pass --verbose to print every event.
  *
  * Usage:
  *   node apps/sync/bin/sync.js                       # interactive: pick a stage
  *   node apps/sync/bin/sync.js --step fetch          # fetch only -> local JSON
  *   node apps/sync/bin/sync.js --step push           # push last fetch (dry-run)
- *   node apps/sync/bin/sync.js --step push --commit  # upload to Medusa
- *   node apps/sync/bin/sync.js --step push --brand Walkaroo --commit
+ *   node apps/sync/bin/sync.js --step push --commit
+ *   node apps/sync/bin/sync.js --step push --brand campus --commit
+ *   node apps/sync/bin/sync.js --step push --brand walkaroo --commit
  */
 const util = require("../src/util")
 const loadEnv = util.loadEnv || util.loadEnv
@@ -38,9 +41,11 @@ function has(name) {
 }
 
 async function main() {
-  const options = {
+    if (has("verbose")) process.env.LOG_VERBOSE = "1"
+
+    const options = {
     company: arg("company", arg("comp", null)),
-    brand: arg("brand", "walkaroo"),
+    brand: arg("brand", "all"),
     tallyHost: arg("host", process.env.TALLY_HOST || null),
     dataDir: arg("data-dir", null),
     from: arg("from", null),
@@ -55,15 +60,19 @@ async function main() {
   }
 
   if (!options.step) {
-    const pick = await select({
-      message: "What do you want to do?",
-      choices: ["fetch  (Tally -> local JSON)", "push   (local JSON -> Medusa)", "all    (fetch then push)"],
-    })
-    if (!pick) {
-      console.error('No stage selected. Pass --step fetch|push|all (STDIN is not interactive).')
-      process.exit(1)
+    if (has("commit") || has("push")) {
+      options.step = "push"
+    } else {
+      const pick = await select({
+        message: "What do you want to do?",
+        choices: ["fetch  (Tally -> local JSON)", "push   (local JSON -> Medusa)", "all    (fetch then push)"],
+      })
+      if (!pick) {
+        console.error("No stage selected. Pass --step fetch|push|all (STDIN is not interactive).")
+        process.exit(1)
+      }
+      options.step = pick.split(/\s+/)[0]
     }
-    options.step = pick.split(/\s+/)[0]
   }
 
   if (!STEPS.includes(options.step)) {

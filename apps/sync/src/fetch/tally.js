@@ -18,6 +18,38 @@ function escapeXml(s) {
     .replace(/"/g, "&quot;").replace(/'/g, "&apos;")
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+/** Tally date like 25-Aug-2026. ClosingBalance is blank unless a period is set. */
+function tallyDate(d) {
+  return `${d.getDate()}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`
+}
+
+function periodDates(now = new Date()) {
+  const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1
+  return {
+    from: `1-Apr-${fyYear}`,
+    to: tallyDate(now),
+  }
+}
+
+function periodVarsXml() {
+  const { from, to } = periodDates()
+  return `<SVFROMDATE TYPE="Date">${from}</SVFROMDATE>
+        <SVTODATE TYPE="Date">${to}</SVTODATE>
+        <SVCURRENTDATE TYPE="Date">${to}</SVCURRENTDATE>`
+}
+
+function qtyNumber(v) {
+  const m = String(v ?? "").match(/-?\d+(?:\.\d+)?/)
+  return m ? parseFloat(m[0]) : 0
+}
+
+function isDummyBatch(name) {
+  const n = String(name || "").trim()
+  return !n || n === "." || /^primary(\s+batch)?$/i.test(n)
+}
+
 function stockXml(company) {
   return `<ENVELOPE>
   <HEADER>
@@ -31,12 +63,14 @@ function stockXml(company) {
       <STATICVARIABLES>
         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
         <SVCURRENTCOMPANY>${escapeXml(company)}</SVCURRENTCOMPANY>
+        ${periodVarsXml()}
       </STATICVARIABLES>
       <TDL>
         <TDLMESSAGE>
           <COLLECTION NAME="StockItems" ISMODIFY="No">
-            <TYPE>StockItem</TYPE>
-            <FETCH>NAME, PARENT, BASEUNITS, CLOSINGBALANCE, PARTNUMBER</FETCH>
+            <TYPE>Stock Item</TYPE>
+            <NATIVEMETHOD>Name, Parent, BaseUnits, ClosingBalance, OpeningBalance, PartNo</NATIVEMETHOD>
+            <FETCH>NAME, PARENT, BASEUNITS, CLOSINGBALANCE, OPENINGBALANCE, PARTNUMBER, BATCHALLOCATIONS.*</FETCH>
           </COLLECTION>
         </TDLMESSAGE>
       </TDL>
@@ -78,15 +112,260 @@ function parseStockRows(xml) {
     }
     const name = attr("NAME") || field("NAME")
     if (!name) continue // skip structural rows without a real item name
+    const batches = parseNestedBatches(body)
     rows.push({
       name,
       parent: field("PARENT"),
       unit: field("BASEUNITS"),
-      closingQty: field("CLOSINGBALANCE"),
+      closingQty: field("CLOSINGBALANCE") || field("CLOSINGQTY") || field("CLBALQTY"),
       partNumber: field("PARTNUMBER"),
+      batches,
     })
   }
   return rows
+}
+
+function parseNestedBatches(body) {
+  const batches = []
+  const re = /<BATCHALLOCATIONS\.LIST\b[^>]*>([\s\S]*?)<\/BATCHALLOCATIONS\.LIST>/gi
+  let m
+  while ((m = re.exec(body)) !== null) {
+    const block = m[1]
+    const field = (tag) => {
+      const r = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i")
+      const f = block.match(r)
+      return f ? decodeXmlEntities(f[1].trim()) : ""
+    }
+    const name = field("BATCHNAME") || field("NAME")
+    if (isDummyBatch(name)) continue
+    batches.push({
+      name,
+      parent: null,
+      closingQty: field("CLOSINGBALANCE"),
+      openingQty: field("OPENINGBALANCE"),
+      godown: field("GODOWNNAME"),
+      rate: field("CLOSINGRATE") || field("OPENINGRATE"),
+    })
+  }
+  return batches
+}
+
+/**
+ * Stock Item BATCHALLOCATIONS.LIST is the opening split, not current stock.
+ * Article CLOSINGBALANCE is current. If Tally did not send per-batch closing,
+ * keep opening qtys and reduce the smallest batches so the total matches.
+ */
+function resolveBatchQuantities(batches, articleClosingQty) {
+  const rows = (batches || []).map((b) => ({
+    ...b,
+    opening: qtyNumber(b.openingQty),
+    closing: qtyNumber(b.closingQty),
+  }))
+  if (rows.some((b) => qtyNumber(b.closingQty))) {
+    return rows.map((b) => ({
+      ...b,
+      qty: b.closing,
+      qtySource: "closing",
+    }))
+  }
+  const openSum = rows.reduce((s, b) => s + b.opening, 0)
+  const target = qtyNumber(articleClosingQty)
+  if (!target || openSum === target) {
+    return rows.map((b) => ({
+      ...b,
+      qty: b.opening,
+      qtySource: "opening",
+    }))
+  }
+  if (openSum < target) {
+    return rows.map((b) => ({
+      ...b,
+      qty: b.opening,
+      qtySource: "opening",
+    }))
+  }
+  let surplus = Math.round((openSum - target) * 1000) / 1000
+  const fitted = new Map(rows.map((b) => [b.name, b.opening]))
+  const order = [...rows].sort((a, b) => a.opening - b.opening || String(a.name).localeCompare(String(b.name)))
+  for (const b of order) {
+    if (surplus <= 0) break
+    const cur = fitted.get(b.name)
+    const take = Math.min(cur, surplus)
+    fitted.set(b.name, cur - take)
+    surplus -= take
+  }
+  return rows.map((b) => ({
+    ...b,
+    qty: fitted.get(b.name),
+    qtySource: "fitted-to-article-closing",
+  }))
+}
+
+function batchesXml(company) {
+  return `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>Batches</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+        <SVCURRENTCOMPANY>${escapeXml(company)}</SVCURRENTCOMPANY>
+        ${periodVarsXml()}
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="Batches" ISMODIFY="No">
+            <TYPE>Batch</TYPE>
+            <FETCH>NAME, PARENT, CLOSINGBALANCE</FETCH>
+          </COLLECTION>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>`
+}
+
+function parseBatchRows(xml) {
+  const rows = []
+  const re = /<(?:BATCH|BATCHES\.LIST)\b([^>]*)>([\s\S]*?)<\/(?:BATCH|BATCHES\.LIST)>/gi
+  let m
+  while ((m = re.exec(xml)) !== null) {
+    const attrs = m[1]
+    const body = m[2]
+    const attr = (name) => {
+      const r = new RegExp(`\\b${name}="([^"]*)"`, "i")
+      const f = attrs.match(r)
+      return f ? decodeXmlEntities(f[1].trim()) : ""
+    }
+    const field = (tag) => {
+      const r = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i")
+      const f = body.match(r)
+      return f ? decodeXmlEntities(f[1].trim()) : ""
+    }
+    const name = attr("NAME") || field("NAME") || field("BATCHNAME")
+    const parent = field("PARENT") || field("STOCKITEMNAME")
+    const closingQty = field("CLOSINGBALANCE") || field("BILLEDQTY") || field("ACTUALQTY")
+    if (isDummyBatch(name)) continue
+    rows.push({ name, parent, closingQty })
+  }
+  return rows
+}
+
+function mergeBatches(a, b) {
+  const out = []
+  const seen = new Set()
+  for (const batch of [...(a || []), ...(b || [])]) {
+    const key = `${batch.parent || ""}::${batch.name}`.toUpperCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(batch)
+  }
+  return out
+}
+
+function innerText(xml) {
+  return decodeXmlEntities(String(xml || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())
+}
+
+function stockSummaryXml(company) {
+  return `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>Stock Summary</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+        <SVCURRENTCOMPANY>${escapeXml(company)}</SVCURRENTCOMPANY>
+        ${periodVarsXml()}
+        <EXPLODEFLAG>Yes</EXPLODEFLAG>
+        <ISITEMWISE>Yes</ISITEMWISE>
+        <DSPSHOWBATCHWISE>Yes</DSPSHOWBATCHWISE>
+        <DSPSHOWALLITEMS>Yes</DSPSHOWALLITEMS>
+      </STATICVARIABLES>
+    </DESC>
+  </BODY>
+</ENVELOPE>`
+}
+
+function parseStockSummary(xml) {
+  const qtyByName = new Map()
+  const nameTags = "DSPACCNAME|DSPDISPNAME|SSITEMNAME|STKMNAME|BATCHNAME|SSBATCHNAME|DSPBATCHNAME"
+  const qtyTags = "DSPCLQTY|SSCLQTY|DSPSTKCL|STKCLOSQTY|CLOSINGBALANCE|CLQTY|DSPCLBLQTY"
+  const nameRe = new RegExp(`<(${nameTags})\\b[^>]*>([\\s\\S]*?)<\\/\\1>`, "gi")
+  const qtyRe = new RegExp(`<(${qtyTags})\\b[^>]*>([\\s\\S]*?)<\\/\\1>`, "i")
+  let m
+  while ((m = nameRe.exec(xml)) !== null) {
+    const name = innerText(m[2])
+    if (!name || isDummyBatch(name)) continue
+    const window = xml.slice(m.index, m.index + 2500)
+    const q = window.match(qtyRe)
+    const closingQty = q ? innerText(q[2]) : ""
+    if (!qtyNumber(closingQty)) continue
+    qtyByName.set(name.toUpperCase(), closingQty)
+  }
+  return qtyByName
+}
+
+function applyQtyByName(rows, qtyByName) {
+  if (!qtyByName || !qtyByName.size) return 0
+  let filled = 0
+  for (const row of rows || []) {
+    if (qtyNumber(row.closingQty) > 0) continue
+    const hit = qtyByName.get(String(row.name || "").trim().toUpperCase())
+    if (!hit) continue
+    row.closingQty = hit
+    filled += 1
+  }
+  return filled
+}
+
+/** Turn batch-wise articles into one Tally row per size/color. */
+function expandWithBatches(items, extraBatches = []) {
+  const extraByParent = new Map()
+  for (const b of extraBatches) {
+    const key = String(b.parent || "").trim()
+    if (!key) continue
+    if (!extraByParent.has(key)) extraByParent.set(key, [])
+    extraByParent.get(key).push(b)
+  }
+
+  const out = []
+  let expanded = 0
+  for (const item of items) {
+    const nested = (item.batches || []).map((b) => ({ ...b, parent: item.name }))
+    const extra = extraByParent.get(item.name) || []
+    const batches = mergeBatches(nested, extra).filter((b) => !isDummyBatch(b.name))
+    const resolved = resolveBatchQuantities(batches, item.closingQty)
+    const usable = resolved.filter((b) => !isDummyBatch(b.name) && qtyNumber(b.qty) > 0)
+    if (!usable.length) {
+      const { batches: _drop, ...rest } = item
+      out.push(rest)
+      continue
+    }
+    expanded += 1
+    for (const b of usable) {
+      out.push({
+        name: b.name,
+        parent: item.parent,
+        article: item.name,
+        unit: item.unit,
+        closingQty: `${b.qty}`,
+        rate: b.rate,
+        partNumber: item.partNumber,
+        source: "batch",
+        qtySource: b.qtySource,
+      })
+    }
+  }
+  return { items: out, articlesWithBatches: expanded }
 }
 
 function companiesXml() {
@@ -217,16 +496,30 @@ async function listCompanies({ host }) {
 
 async function fetchStock({ host, company }) {
   if (!host || !company) throw new Error("Tally host and company are required for live fetch")
-  const xml = await tallyPost(host, stockXml(company))
-  const items = parseStockRows(xml)
+  const xml = await tallyPost(host, stockXml(company), 180000)
+  const parsed = parseStockRows(xml)
+  const expanded = expandWithBatches(parsed, [])
   return {
     source: "tally",
     tallyHost: host,
     company,
-    itemCount: items.length,
+    itemCount: expanded.items.length,
+    articlesWithBatches: expanded.articlesWithBatches,
+    batchCount: parsed.reduce((s, i) => s + (i.batches?.length || 0), 0),
+    period: periodDates(),
     fetchedAt: new Date().toISOString(),
-    items,
+    items: expanded.items,
   }
 }
 
-module.exports = { fetchStock, listCompanies, testConnection }
+module.exports = {
+  fetchStock,
+  listCompanies,
+  testConnection,
+  parseStockRows,
+  parseBatchRows,
+  parseStockSummary,
+  parseNestedBatches,
+  resolveBatchQuantities,
+  expandWithBatches,
+}

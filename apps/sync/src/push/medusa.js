@@ -531,10 +531,6 @@ async function applyPlans({
       }
     })
     logger?.progress("push", Math.min(i + concurrency, plans.length), plans.length)
-    const done = Math.min(i + concurrency, plans.length)
-    if (done === plans.length || done % 50 === 0) {
-      logger?.info(`push progress ${done}/${plans.length}`)
-    }
   }
 
   return summary

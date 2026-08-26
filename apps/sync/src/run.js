@@ -78,7 +78,12 @@ async function runFetch(o) {
 
     logger.info("fetching stock items", { company: o.company })
     const src = await fetchItems({ ...o, tallyHost, tallyHost })
-    logger.info("fetched stock", { company: src.company, itemCount: src.items.length })
+    logger.info("fetched stock", {
+      company: src.company,
+      itemCount: src.items.length,
+      articlesWithBatches: src.articlesWithBatches || 0,
+      batchCount: src.batchCount || 0,
+    })
 
     const problems = validateItems(src.items)
     if (problems.length) {
@@ -93,17 +98,23 @@ async function runFetch(o) {
     writeJson(latestPath(dataDir), src)
     writeJson(path.join(runDir, "fetched.json"), src)
 
-    const preview = transformItems(src.items, { brand: o.brand || "walkaroo", logger })
+    const preview = transformItems(src.items, { brand: o.brand || "all", logger })
+    const brandCounts = {}
+    for (const p of preview.plans) {
+      brandCounts[p.brand] = (brandCounts[p.brand] || 0) + 1
+    }
     logger.finalize("done", {
       company: src.company,
       itemCount: src.items.length,
+      articlesWithBatches: src.articlesWithBatches || 0,
       file: outFile,
-      walkarooProducts: preview.plans.length,
+      productsByBrand: brandCounts,
     })
+    logger.clearStatus?.()
     console.log(`\n[fetch] done. ${src.items.length} item(s) from "${src.company}".`)
     console.log(`  saved : ${outFile}`)
-    console.log(`  brands: ${Object.entries(byBrand).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b} (${c})`).join(", ")}`)
-    console.log(`  walkaroo products (parsed): ${preview.plans.length}  variants: ${preview.plans.reduce((s, p) => s + p.variants.length, 0)}`)
+    console.log(`  tally parents: ${Object.entries(byBrand).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b} (${c})`).join(", ")}`)
+    console.log(`  products parsed: ${Object.entries(brandCounts).map(([b, c]) => `${b} (${c})`).join(", ") || "(none)"}  variants: ${preview.plans.reduce((s, p) => s + p.variants.length, 0)}`)
     return { src, file: outFile, runId }
   } catch (e) {
     logger.finalize("failed", { error: e.message })
@@ -131,7 +142,7 @@ async function runPush(o, preloaded) {
       logger.info("loaded fetched JSON", { file, itemCount: src.items?.length || 0 })
     }
     o.company = o.company || src.company
-    if (!o.brand) o.brand = "walkaroo"
+    if (!o.brand) o.brand = "all"
     logger.info("push brand filter", { brand: o.brand })
 
     const transformed = transformItems(src.items, {
@@ -165,6 +176,7 @@ async function runPush(o, preloaded) {
     })
 
     const skipped = transformed.skipped || {}
+    logger.clearStatus?.()
     console.log(`\n[push] plan for "${o.company}" / ${o.brand}:`)
     console.log(`  products : ${plans.filter((p) => !p.zeroStock).length} in-stock, ${plans.length} including zero-qty`)
     console.log(`  variants : ${plans.reduce((s, p) => s + (p.variants?.length || 0), 0)}`)
@@ -206,6 +218,7 @@ async function runPush(o, preloaded) {
       failed: res.failed,
     })
 
+    logger.clearStatus?.()
     console.log(`\n[push] ${dryRun ? "dry-run" : "write"} complete.`)
     console.log(`  unchanged : ${res.unchanged}  (already matched Tally — not written)`)
     console.log(`  updated   : ${res.updated}  (quantity changed)`)

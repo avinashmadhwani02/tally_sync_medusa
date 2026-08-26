@@ -4,7 +4,8 @@
  * One Tally row is one variant. Rows that share a productId (e.g. Walkaroo
  * WALKAROO-WLR72017 in brown and cream) become one product with color/size variants.
  */
-const { parseStockRow } = require("../brands")
+const { parseStockRow, brandFilterAllows } = require("../brands")
+const campus = require("../brands/campus")
 
 /** MRP as rupees, e.g. 269.00 — not paise. */
 function rupeeAmount(mrp) {
@@ -74,13 +75,13 @@ function buildProductPayload(group, currency) {
 
 function transformItems(items, opts = {}) {
   const {
-    brand: brandFilter = "walkaroo",
+    brand: brandFilter = "all",
     limit = 0,
     currency = "inr",
     logger = null,
   } = opts
 
-  const want = brandFilter ? String(brandFilter).trim().toLowerCase() : "walkaroo"
+  const want = brandFilter ? String(brandFilter).trim().toLowerCase() : "all"
   const skipped = { outOfScope: 0, notEnabled: 0, parseFailed: 0, noStock: 0 }
   const products = new Map()
 
@@ -89,15 +90,24 @@ function transformItems(items, opts = {}) {
     brand: want,
   })
 
+  const campusArticlesWithSkus = new Set()
   for (const item of items || []) {
-    const parsed = parseStockRow(item, logger)
+    const sku = campus.parseSku(item.name)
+    if (!sku) continue
+    const art = String(item.article || item.parent || "").trim()
+    if (art) campusArticlesWithSkus.add(art.toUpperCase())
+  }
+  const parseCtx = { campusArticlesWithSkus }
+
+  for (const item of items || []) {
+    const parsed = parseStockRow(item, logger, parseCtx)
     if (!parsed || parsed.skipped || !parsed.ok) {
       if (parsed?.reason && /not walkaroo\/campus\/adda/i.test(parsed.reason)) skipped.outOfScope++
       else if (parsed?.reason && /not enabled/.test(parsed.reason)) skipped.notEnabled++
       else skipped.parseFailed++
       continue
     }
-    if (want && parsed.brand !== want) {
+    if (!brandFilterAllows(want, parsed.brand)) {
       skipped.notEnabled++
       continue
     }
