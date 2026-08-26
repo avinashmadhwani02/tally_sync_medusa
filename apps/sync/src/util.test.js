@@ -8,7 +8,13 @@ const { slug, readJson, writeJson, loadEnv, findRepoRoot } = require("./util")
 test("findRepoRoot locates the directory containing .git", () => {
   const root = findRepoRoot()
   assert.ok(fs.existsSync(path.join(root, ".git")))
-  assert.equal(path.basename(root), "tally-sync-app")
+  // The repo root must be an ancestor of this module (apps/sync/src), so the
+  // assertion is independent of the local checkout directory's name.
+  const src = path.resolve(__dirname)
+  assert.ok(
+    src === root || src.startsWith(root + path.sep),
+    `expected repo root ${root} to be an ancestor of ${src}`
+  )
 })
 
 test("slug produces a lowercase filesystem-safe name", () => {
