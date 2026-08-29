@@ -1,4 +1,9 @@
-import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import {
+  ContainerRegistrationKeys,
+  loadEnv,
+  defineConfig,
+  Modules,
+} from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -17,6 +22,19 @@ const databaseDriverOptions =
 const s3Configured = Boolean(
   process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
 )
+
+const authModule = {
+  resolve: '@medusajs/medusa/auth',
+  dependencies: [Modules.CACHE, ContainerRegistrationKeys.LOGGER],
+  options: {
+    providers: [
+      {
+        resolve: '@medusajs/medusa/auth-emailpass',
+        id: 'emailpass',
+      },
+    ],
+  },
+}
 
 const fileModule = isProd
   ? {
@@ -55,7 +73,7 @@ const fileModule = isProd
 module.exports = defineConfig({
   admin: {
     disable: process.env.DISABLE_MEDUSA_ADMIN === 'true',
-    backendUrl: medusaUrl,
+    // nginx serves admin + API on the same host — omit backendUrl so the browser uses same origin
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -71,7 +89,11 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET,
       cookieSecret: process.env.COOKIE_SECRET,
+      authMethodsPerActor: {
+        user: ['emailpass'],
+        customer: ['emailpass'],
+      },
     },
   },
-  ...(fileModule ? { modules: [fileModule] } : {}),
+  ...(isProd && fileModule ? { modules: [authModule, fileModule] } : {}),
 })

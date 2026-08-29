@@ -36,6 +36,7 @@ jobs:
         run: |
           docker build \
             -f apps/medusa/Dockerfile \
+            --build-arg MEDUSA_URL=${{ vars.MEDUSA_URL || 'http://65.0.7.35' }} \
             -t $ECR_REPOSITORY:${{ github.sha }} \
             .
 

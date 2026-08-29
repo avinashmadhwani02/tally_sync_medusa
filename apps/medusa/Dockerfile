@@ -12,6 +12,7 @@ RUN apt-get update \
 
 # ---- builder: full install (dev deps needed for `medusa build`) ----
 FROM base AS builder
+ARG MEDUSA_URL=
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -26,8 +27,11 @@ RUN npm ci --include-workspace-root
 
 COPY . .
 
+ENV MEDUSA_URL=${MEDUSA_URL}
+
 RUN npm run prisma:generate -w @tally-sync/medusa \
-    && npm run build -w @tally-sync/medusa \
+    && NODE_ENV=production MEDUSA_COOKIE_SECURE=false \
+       npm run build -w @tally-sync/medusa \
     && cp -r apps/medusa/src/generated apps/medusa/.medusa/server/src/generated \
     && cp -r apps/medusa/prisma apps/medusa/.medusa/server/prisma \
     && test -f apps/medusa/.medusa/server/public/admin/index.html
