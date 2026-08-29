@@ -1,24 +1,26 @@
-# Pull and run the Medusa image (same pattern as Neev).
-# Postgres is the existing tally_sync database — not started here.
-# In the container .env, use REDIS_URL=redis://redis:6379
-# and a DATABASE_URL the container can reach (not localhost).
+# Medusa + Postgres + Redis + nginx (EC2 / production).
+# Copy this file, nginx/default.conf, and .env.prod to ~/medusa on the server.
+#
+#   docker compose pull
+#   docker compose up -d
 services:
   medusa:
     image: 409796440499.dkr.ecr.ap-south-1.amazonaws.com/medusa-backend:latest
     container_name: medusa-backend
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.prod
     environment:
       NODE_ENV: production
       PORT: "9000"
       REDIS_URL: redis://redis:6379
     expose:
       - "9000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     healthcheck:
       test:
         [
@@ -31,6 +33,21 @@ services:
       timeout: 5s
       retries: 3
       start_period: 60s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: medusa-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    volumes:
+      - medusa_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -51,4 +68,5 @@ services:
       - medusa
 
 volumes:
+  medusa_postgres:
   medusa_redis:
