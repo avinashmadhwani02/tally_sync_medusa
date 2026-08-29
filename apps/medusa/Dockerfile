@@ -1,9 +1,8 @@
 # Build context is the repo root:
 #   docker build -f apps/medusa/Dockerfile .
 #
-# The Medusa backend (`@tally-sync/medusa`) is an npm-workspace member, so we
-# install at the repo root. `medusa build` compiles the server + admin into
-# .medusa/. Prisma generate needs the schema present before/after install.
+# Medusa v2 production runs from `.medusa/server` after `medusa build`
+# (admin lives in public/admin inside that directory).
 
 # ---- base: deps required at runtime and for prisma (glibc + openssl) ----
 FROM node:22-bookworm-slim AS base
@@ -21,7 +20,6 @@ COPY apps/desktop/package.json apps/desktop/package.json
 COPY apps/sync/package.json apps/sync/package.json
 COPY apps/medusa/prisma apps/medusa/prisma
 
-# Electron is a desktop workspace dep; skip its binary in this image.
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 RUN npm ci --include-workspace-root
@@ -29,18 +27,21 @@ RUN npm ci --include-workspace-root
 COPY . .
 
 RUN npm run prisma:generate -w @tally-sync/medusa \
-    && npm run build -w @tally-sync/medusa
+    && npm run build -w @tally-sync/medusa \
+    && cp -r apps/medusa/src/generated apps/medusa/.medusa/server/src/generated \
+    && cp -r apps/medusa/prisma apps/medusa/.medusa/server/prisma
 
-# ---- runtime: run the compiled Medusa server ----
+# ---- runtime: serve the standalone Medusa build ----
 FROM base AS runtime
 WORKDIR /app
+
+COPY --from=builder /app/apps/medusa/.medusa/server ./
+
+RUN npm install --omit=dev
+
 ENV NODE_ENV=production \
-    PORT=9000
+    PORT=9000 \
+    DISABLE_MEDUSA_ADMIN=false
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=builder /app/apps/medusa ./apps/medusa
-
-WORKDIR /app/apps/medusa
 EXPOSE 9000
 CMD ["sh", "-c", "npx medusa db:migrate && npm run start"]

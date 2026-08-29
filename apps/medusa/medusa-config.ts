@@ -8,6 +8,46 @@ const databaseDriverOptions =
     ? { connection: { ssl: { rejectUnauthorized: true } } }
     : { connection: { ssl: false } }
 
+const s3Configured = Boolean(
+  process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+)
+
+const fileModule = isProd
+  ? {
+      resolve: '@medusajs/medusa/file',
+      options: {
+        providers: [
+          s3Configured
+            ? {
+                resolve: '@medusajs/medusa/file-s3',
+                id: 's3',
+                options: {
+                  file_url: process.env.S3_FILE_URL,
+                  access_key_id: process.env.S3_ACCESS_KEY_ID,
+                  secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+                  region: process.env.S3_REGION,
+                  bucket: process.env.S3_BUCKET,
+                  endpoint: process.env.S3_ENDPOINT,
+                  ...(process.env.S3_FORCE_PATH_STYLE === 'true'
+                    ? { additional_client_config: { forcePathStyle: true } }
+                    : {}),
+                },
+              }
+            : {
+                resolve: '@medusajs/medusa/file-local',
+                id: 'local',
+                options: {
+                  upload_dir: 'uploads',
+                  backend_url:
+                    process.env.MEDUSA_URL ||
+                    `http://localhost:${process.env.PORT || 9000}`,
+                },
+              },
+        ],
+      },
+    }
+  : null
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -21,32 +61,5 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET,
     },
   },
-  ...(isProd
-    ? {
-        modules: [
-          {
-            resolve: '@medusajs/medusa/file',
-            options: {
-              providers: [
-                {
-                  resolve: '@medusajs/medusa/file-s3',
-                  id: 's3',
-                  options: {
-                    file_url: process.env.S3_FILE_URL,
-                    access_key_id: process.env.S3_ACCESS_KEY_ID,
-                    secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
-                    region: process.env.S3_REGION,
-                    bucket: process.env.S3_BUCKET,
-                    endpoint: process.env.S3_ENDPOINT,
-                    ...(process.env.S3_FORCE_PATH_STYLE === 'true'
-                      ? { additional_client_config: { forcePathStyle: true } }
-                      : {}),
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      }
-    : {}),
+  ...(fileModule ? { modules: [fileModule] } : {}),
 })

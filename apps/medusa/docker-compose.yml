@@ -13,6 +13,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "9000"
+      DISABLE_MEDUSA_ADMIN: "false"
       REDIS_URL: redis://redis:6379
     expose:
       - "9000"
@@ -21,6 +22,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - medusa_uploads:/app/apps/medusa/uploads
     healthcheck:
       test:
         [
@@ -70,3 +73,4 @@ services:
 volumes:
   medusa_postgres:
   medusa_redis:
+  medusa_uploads:
