@@ -29,7 +29,8 @@ COPY . .
 RUN npm run prisma:generate -w @tally-sync/medusa \
     && npm run build -w @tally-sync/medusa \
     && cp -r apps/medusa/src/generated apps/medusa/.medusa/server/src/generated \
-    && cp -r apps/medusa/prisma apps/medusa/.medusa/server/prisma
+    && cp -r apps/medusa/prisma apps/medusa/.medusa/server/prisma \
+    && test -f apps/medusa/.medusa/server/public/admin/index.html
 
 # ---- runtime: serve the standalone Medusa build ----
 FROM base AS runtime

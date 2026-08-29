@@ -1,8 +1,7 @@
 # Medusa + Postgres + Redis + nginx (EC2 / production).
-# Copy this file, nginx/default.conf, and .env.prod to ~/medusa on the server.
+# Copy this folder to ~/medusa on the server (.env.prod, nginx/, deploy.sh).
 #
-#   docker compose pull
-#   docker compose up -d
+#   chmod +x deploy.sh && ./deploy.sh
 services:
   medusa:
     image: 409796440499.dkr.ecr.ap-south-1.amazonaws.com/medusa-backend:latest
@@ -23,7 +22,7 @@ services:
       redis:
         condition: service_started
     volumes:
-      - medusa_uploads:/app/apps/medusa/uploads
+      - medusa_uploads:/app/uploads
     healthcheck:
       test:
         [
